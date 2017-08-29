@@ -40,3 +40,26 @@ func Example_client_Ticker() {
 	fmt.Printf("High: %.4f\n\n", ticker.Ticker.High)
 	fmt.Printf("Volume: %.4f\n", ticker.Ticker.Volume)
 }
+
+func Example_client_LastTrades() {
+	client, err := okcoin.NewDefaultClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tres, err := client.LastTrades(&okcoin.LastTradesRequest{
+		Symbol:      okcoin.BTCUSD,
+		LastTradeID: 354425297,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Last Trades for Symbol: %s\n\n", tres.Symbol)
+	for i, trade := range tres.Trades {
+		fmt.Printf("#%d ID: %d\n", i, trade.ID)
+		fmt.Printf("\tAmount: %.3f\n", trade.Amount)
+		fmt.Printf("\tPrice: %.3f\n", trade.Price)
+		fmt.Printf("\tType: %s\n\n", trade.Type)
+	}
+}

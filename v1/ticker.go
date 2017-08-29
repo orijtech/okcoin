@@ -18,10 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"net/http"
 	"reflect"
-
-	"github.com/orijtech/otils"
 )
 
 type TickerResponse struct {
@@ -53,18 +51,12 @@ func (c *Client) Ticker(sym Symbol) (*TickerResponse, error) {
 		return nil, errBlankSymbol
 	}
 	fullURL := fmt.Sprintf("%s/ticker.do?symbol=%s", baseURL, sym)
-	res, err := c.httpClient().Get(fullURL)
+	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-	if !otils.StatusOK(res.StatusCode) {
-		return nil, fmt.Errorf("%s", res.StatusCode)
-	}
 
-	blob, err := ioutil.ReadAll(res.Body)
+	blob, _, err := c.doHTTPReq(req)
 	if err != nil {
 		return nil, err
 	}
