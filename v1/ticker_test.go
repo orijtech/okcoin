@@ -82,6 +82,8 @@ func (b *backend) RoundTrip(req *http.Request) (*http.Response, error) {
 		return b.tickerRoundTrip(req)
 	case lastNTradesRoute:
 		return b.lastNTradesRoundTrip(req)
+	case candleStickRoute:
+		return b.candleStickRoundTrip(req)
 	default:
 		return nil, errUnimplemented
 	}

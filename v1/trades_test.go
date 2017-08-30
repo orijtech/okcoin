@@ -42,8 +42,8 @@ func TestLastTrades(t *testing.T) {
 		0: {wantAtLeast: 20, wantSymbol: okcoin.BTCUSD}, // a nil request should return the defaults
 		1: {
 			req: &okcoin.LastTradesRequest{
-				Symbol: okcoin.LTCUSD,
-				N:      60,
+				Symbol:      okcoin.LTCUSD,
+				LastTradeID: 60,
 			},
 			wantAtLeast: 20,
 		},

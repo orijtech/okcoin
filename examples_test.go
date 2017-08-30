@@ -63,3 +63,25 @@ func Example_client_LastTrades() {
 		fmt.Printf("\tType: %s\n\n", trade.Type)
 	}
 }
+
+func Example_client_CandleStick() {
+	client, err := okcoin.NewDefaultClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cres, err := client.CandleStick(&okcoin.CandleStickRequest{
+		Symbol: okcoin.ETHUSD,
+		Period: okcoin.P5Min,
+		Since:  1504068023.163283,
+		N:      20,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("CandleSticks for %s Period: %v\n\n", cres.Symbol, cres.Period)
+	for i, cstick := range cres.CandleSticks {
+		fmt.Printf("#%d %+v\n", i, cstick)
+	}
+}
