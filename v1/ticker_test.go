@@ -84,6 +84,8 @@ func (b *backend) RoundTrip(req *http.Request) (*http.Response, error) {
 		return b.lastNTradesRoundTrip(req)
 	case candleStickRoute:
 		return b.candleStickRoundTrip(req)
+	case fundsRoute:
+		return b.fundsRoundTrip(req)
 	default:
 		return nil, errUnimplemented
 	}
@@ -101,12 +103,17 @@ func (b *backend) tickerRoundTrip(req *http.Request) (*http.Response, error) {
 	query := req.URL.Query()
 	symbol := query.Get("symbol")
 	outPath := fmt.Sprintf("./testdata/ticker-%s.json", symbol)
-	f, err := os.Open(outPath)
+	return respFromFile(outPath)
+}
+
+func respFromFile(p string) (*http.Response, error) {
+	f, err := os.Open(p)
 	if err != nil {
 		return makeResp(err.Error(), http.StatusInternalServerError, nil)
 	}
 	// This handle should be closed by the consumer.
 	return makeResp("200 OK", http.StatusOK, f)
+
 }
 
 func makeResp(status string, statusCode int, body io.ReadCloser) (*http.Response, error) {

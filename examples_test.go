@@ -85,3 +85,15 @@ func Example_client_CandleStick() {
 		fmt.Printf("#%d %+v\n", i, cstick)
 	}
 }
+
+func Example_client_Funds() {
+	client, err := okcoin.NewClientFromEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+	funds, err := client.Funds()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Funds reported: %+v\n", funds)
+}

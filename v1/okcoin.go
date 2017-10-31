@@ -15,9 +15,14 @@
 package okcoin
 
 import (
+	"crypto/md5"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/orijtech/otils"
@@ -40,6 +45,32 @@ const (
 type Client struct {
 	rt http.RoundTripper
 	mu sync.RWMutex
+
+	_apiSecret string
+	_apiKey    string
+}
+
+const (
+	envAPIKeyKey    = "OKCOIN_API_KEY"
+	envAPISecretKey = "OKCOIN_API_SECRET"
+)
+
+func NewClientFromEnv() (*Client, error) {
+	var errsList []string
+	apiKey := fromEnvOrAppendError(envAPIKeyKey, &errsList)
+	apiSecret := fromEnvOrAppendError(envAPISecretKey, &errsList)
+	if len(errsList) > 0 {
+		return nil, errors.New(strings.Join(errsList, "\n"))
+	}
+	return &Client{_apiSecret: apiSecret, _apiKey: apiKey}, nil
+}
+
+func fromEnvOrAppendError(envKey string, errsList *[]string) string {
+	if value := os.Getenv(envKey); value != "" {
+		return value
+	}
+	*errsList = append(*errsList, fmt.Sprintf("%q was not set", envKey))
+	return ""
 }
 
 func (c *Client) SetHTTPRoundTripper(rt http.RoundTripper) {
@@ -79,4 +110,47 @@ func (c *Client) doHTTPReq(req *http.Request) ([]byte, http.Header, error) {
 		return nil, res.Header, err
 	}
 	return blob, res.Header, nil
+}
+
+func (c *Client) prepareSignedAuthBody(qv url.Values) (url.Values, error) {
+	// As per https://www.okcoin.com/intro_signParams.html
+	// Get the query string + "secret_key"=$SECRET_KEY
+	// * All parameters/queries except "sign" must be signed
+	// * Must use an MD5 signature with apiSecret as the key and the query values
+	// * Send the "sign" query value along
+	// * Sign's value MUST be an upper-case string
+	h := md5.New()
+	fmt.Fprintf(h, "%s&secret_key=%s", qv.Encode(), c.apiSecret())
+	signature := fmt.Sprintf("%x", h.Sum(nil))
+	qv.Set("sign", strings.ToUpper(signature))
+	return qv, nil
+}
+
+type Credentials struct {
+	APIKey string `json:"api_key"`
+	Secret string `json:"secret"`
+}
+
+func (c *Client) SetCredentials(creds *Credentials) {
+	if creds == nil {
+		return
+	}
+	c.mu.Lock()
+	c._apiKey = creds.APIKey
+	c._apiSecret = creds.Secret
+	c.mu.Unlock()
+}
+
+func (c *Client) apiSecret() string {
+	c.mu.Lock()
+	secretKey := c._apiSecret
+	c.mu.Unlock()
+	return secretKey
+}
+
+func (c *Client) apiKey() string {
+	c.mu.Lock()
+	apiKey := c._apiKey
+	c.mu.Unlock()
+	return apiKey
 }
